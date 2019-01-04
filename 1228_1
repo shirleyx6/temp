@@ -1,0 +1,510 @@
+22
+# coding: utf-8
+
+# In[1]:
+
+
+from da.plot import *
+import pandas as pd
+import numpy as np
+import matplotlib
+import time
+import matplotlib.pyplot as plt
+matplotlib.rcParams['font.sans-serif']=['SimHei']
+
+
+# In[2]:
+
+
+train=pd.read_csv('file:///E:/tianchi/jinnan_round1_train_20181227.csv',encoding='ISO-8859-1')
+#test=pd.read_csv('file:///E:/tianchi/jinnan_round1_testA_20181227.csv',encoding='ISO-8859-1')
+
+
+# In[3]:
+
+
+train.columns=['ID','A1', 'A2', 'A3', 'A4', 'timeA5', 'A6', 'delete_timeA7', 'delete_A8', 
+    'timeA9', 'A10','timeA11', 'A12', 'A13', 'timeA14', 'A15', 'timeA16', 'A17',
+    'A18', 'A19', 'timeA20','A21', 'A22', 'A23', 'timeA24', 'A25', 'timeA26', 'A27', 'timeA28', 
+    'B1', 'B2','B3', 'timeB4', 'timeB5', 'B6', 'timeB7', 'B8', 'timeB9', 'timeB10', 'timeB11', 
+    'B12', 'B13','B14','ACPT_RATE']
+
+
+# In[4]:
+
+
+# test.columns=['ID','A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9', 'A10',
+#        'A11', 'A12', 'A13', 'A14', 'A15', 'A16', 'A17', 'A18', 'A19', 'A20',
+#        'A21', 'A22', 'A23', 'A24', 'A25', 'A26', 'A27', 'A28', 'B1', 'B2',
+#        'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9', 'B10', 'B11', 'B12', 'B13',
+#        'B14']
+
+
+# # preprocessing
+
+# In[5]:
+
+
+#ACPT_RATE字段有大于1的异常值，替换成1
+train.ACPT_RATE[train.ACPT_RATE>=1]=1
+
+
+# In[6]:
+
+
+temp_timeA20=pd.Series(train.timeA20).str.split('-',expand=True)  
+temp_timeA28=pd.Series(train.timeA28).str.split('-',expand=True)  
+temp_timeB4=pd.Series(train.timeB4).str.split('-',expand=True)  
+temp_timeB9=pd.Series(train.timeB9).str.split('-',expand=True)  
+temp_timeB10=pd.Series(train.timeB10).str.split('-',expand=True)  
+temp_timeB11=pd.Series(train.timeB11).str.split('-',expand=True)  
+temp_timeA20.columns=['timeA20_s','timeA20_e']   
+temp_timeA28.columns=['timeA28_s','timeA28_e']   
+temp_timeB4.columns=['timeB4_s','timeB4_e']   
+temp_timeB9.columns=['timeB9_s','timeB9_e']   
+temp_timeB10.columns=['timeB10_s','timeB10_e']   
+temp_timeB11.columns=['timeB11_s','timeB11_e']   
+
+
+# In[7]:
+
+
+trainNew=pd.concat([train,temp_timeA20,temp_timeA28,temp_timeB4,temp_timeB9,temp_timeB10,temp_timeB11],axis=1)
+trainNew=trainNew.drop(columns=['timeA20','timeA28','timeB4','timeB9','timeB10','timeB11'])
+
+
+# In[8]:
+
+
+for i in range(len(trainNew)):
+    try:
+        
+        trainNew.timeB4_s[i:(i+1)]=pd.DataFrame(trainNew.timeB4_s[i:(i+1)].astype('datetime64[ns]'))
+        trainNew.timeB4_e[i:(i+1)]=pd.DataFrame(trainNew.timeB4_e[i:(i+1)].astype('datetime64[ns]'))
+        trainNew.timeB9_s[i:(i+1)]=pd.DataFrame(trainNew.timeB9_s[i:(i+1)].astype('datetime64[ns]'))
+        trainNew.timeB9_e[i:(i+1)]=pd.DataFrame(trainNew.timeB9_e[i:(i+1)].astype('datetime64[ns]'))
+        
+        trainNew.timeA9[i:(i+1)]=pd.DataFrame(trainNew.timeA9[i:(i+1)].astype('datetime64[ns]'))
+        trainNew.timeA11[i:(i+1)]=pd.DataFrame(trainNew.timeA11[i:(i+1)].astype('datetime64[ns]'))
+        trainNew.timeA20_s[i:(i+1)]=pd.DataFrame(trainNew.timeA20_s[i:(i+1)].astype('datetime64[ns]'))
+        trainNew.timeA20_e[i:(i+1)]=pd.DataFrame(trainNew.timeA20_e[i:(i+1)].astype('datetime64[ns]'))
+        trainNew.timeA28_s[i:(i+1)]=pd.DataFrame(trainNew.timeA28_s[i:(i+1)].astype('datetime64[ns]'))
+        trainNew.timeA28_e[i:(i+1)]=pd.DataFrame(trainNew.timeA28_e[i:(i+1)].astype('datetime64[ns]'))
+        trainNew.timeB10_s[i:(i+1)]=pd.DataFrame(trainNew.timeB10_s[i:(i+1)].astype('datetime64[ns]'))
+        trainNew.timeB10_e[i:(i+1)]=pd.DataFrame(trainNew.timeB10_e[i:(i+1)].astype('datetime64[ns]'))
+        trainNew.timeB11_s[i:(i+1)]=pd.DataFrame(trainNew.timeB11_s[i:(i+1)].astype('datetime64[ns]'))
+        trainNew.timeB11_e[i:(i+1)]=pd.DataFrame(trainNew.timeB11_e[i:(i+1)].astype('datetime64[ns]'))
+    except:
+        trainNew.timeB4_s[i:(i+1)]='00:00:00'
+        trainNew.timeB4_e[i:(i+1)]='00:00:00'
+        trainNew.timeB9_s[i:(i+1)]='00:00:00'
+        trainNew.timeB9_e[i:(i+1)]='00:00:00'
+        
+        trainNew.timeA9[i:(i+1)]='00:00:00'
+        trainNew.timeA11[i:(i+1)]='00:00:00'
+        trainNew.timeA20_s[i:(i+1)]='00:00:00'
+        trainNew.timeA20_e[i:(i+1)]='00:00:00'
+        trainNew.timeA28_s[i:(i+1)]='00:00:00'
+        trainNew.timeA28_e[i:(i+1)]='00:00:00'
+        trainNew.timeB10_s[i:(i+1)]='00:00:00'
+        trainNew.timeB10_e[i:(i+1)]='00:00:00'
+        trainNew.timeB11_s[i:(i+1)]='00:00:00'
+        trainNew.timeB11_e[i:(i+1)]='00:00:00'
+
+
+# In[10]:
+
+
+trainNew.timeA5=trainNew.timeA5.astype('datetime64[ns]')
+trainNew.delete_timeA7=trainNew.delete_timeA7.astype('datetime64[ns]')
+trainNew.delete_A8=trainNew.delete_A8.astype('datetime64[ns]')
+trainNew.timeA14=trainNew.timeA14.astype('datetime64[ns]')
+trainNew.timeA16=trainNew.timeA16.astype('datetime64[ns]')
+trainNew.timeA24=trainNew.timeA24.astype('datetime64[ns]')
+trainNew.timeA26=trainNew.timeA26.astype('datetime64[ns]')
+trainNew.timeB5=trainNew.timeB5.astype('datetime64[ns]')
+trainNew.timeB7=trainNew.timeB7.astype('datetime64[ns]')
+trainNew.timeB4_s=trainNew.timeB4_s.astype('datetime64[ns]')
+trainNew.timeB4_e=trainNew.timeB4_e.astype('datetime64[ns]')
+trainNew.timeB9_s=trainNew.timeB9_s.astype('datetime64[ns]')
+trainNew.timeB9_e=trainNew.timeB9_e.astype('datetime64[ns]')
+trainNew.timeA9=trainNew.timeA9.astype('datetime64[ns]')
+trainNew.timeA11=trainNew.timeA11.astype('datetime64[ns]')
+trainNew.timeA20_s=trainNew.timeA20_s.astype('datetime64[ns]')
+trainNew.timeA20_e=trainNew.timeA20_e.astype('datetime64[ns]')
+trainNew.timeA28_s=trainNew.timeA28_s.astype('datetime64[ns]')
+trainNew.timeA28_e=trainNew.timeA28_e.astype('datetime64[ns]')
+trainNew.timeB10_s=trainNew.timeB10_s.astype('datetime64[ns]')
+trainNew.timeB10_e=trainNew.timeB10_e.astype('datetime64[ns]')
+trainNew.timeB11_s=trainNew.timeB11_s.astype('datetime64[ns]')
+trainNew.timeB11_e=trainNew.timeB11_e.astype('datetime64[ns]')
+
+
+# In[12]:
+
+
+trainNew.to_csv('E:/tianchi/jinnan_round1_trainNew.csv')
+
+
+# # feature selection
+
+# In[100]:
+
+
+train=pd.read_csv('file:///E:/tianchi/jinnan_round1_trainNew (2).csv')
+
+
+# In[101]:
+
+
+train1=train[(train.timeA20_s=='2018-12-29 00:00:00')&(train.timeA20_e=='2018-12-29 00:00:00')
+             &(train.timeA28_e=='2018-12-29 00:00:00')]
+
+
+# In[102]:
+
+
+list1=train1.ID
+train2=train[~train.ID.isin(list1)]
+train=train2
+
+
+# In[103]:
+
+
+train.timeA5=train.timeA5.astype('datetime64[ns]')
+train.timeA9=train.timeA9.astype('datetime64[ns]')
+train.timeA11=train.timeA11.astype('datetime64[ns]')
+train.timeA14=train.timeA14.astype('datetime64[ns]')
+train.timeA16=train.timeA16.astype('datetime64[ns]')
+train.timeA24=train.timeA24.astype('datetime64[ns]')
+train.timeA26=train.timeA26.astype('datetime64[ns]')
+train.timeB5=train.timeB5.astype('datetime64[ns]')
+train.timeB7=train.timeB7.astype('datetime64[ns]')
+train.timeA20_s=train.timeA20_s.astype('datetime64[ns]')
+train.timeA20_e=train.timeA20_e.astype('datetime64[ns]')
+train.timeA28_s=train.timeA28_s.astype('datetime64[ns]')
+train.timeA28_e=train.timeA28_e.astype('datetime64[ns]')
+train.timeB4_s=train.timeB4_s.astype('datetime64[ns]')
+train.timeB4_e=train.timeB4_e.astype('datetime64[ns]')
+
+train.timeB9_s=train.timeB9_s.astype('datetime64[ns]')
+train.timeB9_e=train.timeB9_e.astype('datetime64[ns]')
+train.timeB10_s=train.timeB10_s.astype('datetime64[ns]')
+train.timeB10_e=train.timeB10_e.astype('datetime64[ns]')
+train.timeB11_s=train.timeB11_s.astype('datetime64[ns]')
+train.timeB11_e=train.timeB11_e.astype('datetime64[ns]')
+
+
+# In[104]:
+
+
+train['deltaA9_5']=(train.timeA9-train.timeA5)/ pd.Timedelta('01:00:00')
+train['deltaA11_9']=(train.timeA11-train.timeA9)/ pd.Timedelta('01:00:00')
+train['deltaA14_11']=(train.timeA14-train.timeA11)/ pd.Timedelta('01:00:00')
+train['deltaA16_14']=(train.timeA16-train.timeA14)/ pd.Timedelta('01:00:00')
+train['deltaA20s_16']=(train.timeA20_s-train.timeA16)/ pd.Timedelta('01:00:00')
+train['deltaA20e_s']=(train.timeA20_e-train.timeA20_s)/ pd.Timedelta('01:00:00')
+train['deltaA24_20e']=(train.timeA24-train.timeA20_e)/ pd.Timedelta('01:00:00')
+train['deltaA26_24']=(train.timeA26-train.timeA24)/ pd.Timedelta('01:00:00')
+train['deltaA28s_26']=(train.timeA28_s-train.timeA26)/ pd.Timedelta('01:00:00')
+train['deltaA28e_s']=(train.timeA28_e-train.timeA28_s)/ pd.Timedelta('01:00:00')
+
+train['deltaB4s_28e']=(train.timeB4_s-train.timeA28_e)/ pd.Timedelta('01:00:00')
+train['deltaB4e_s']=(train.timeB4_e-train.timeB4_s)/ pd.Timedelta('01:00:00')
+train['deltaB5_4e']=(train.timeB5-train.timeB4_e)/ pd.Timedelta('01:00:00')
+train['deltaB7_5']=(train.timeB7-train.timeB5)/ pd.Timedelta('01:00:00')
+train['deltaB9s_7']=(train.timeB9_s-train.timeB7)/ pd.Timedelta('01:00:00')
+train['deltaB9e_s']=(train.timeB9_e-train.timeB9_s)/ pd.Timedelta('01:00:00')
+train['deltaB10s_9e']=(train.timeB10_s-train.timeB9_e)/ pd.Timedelta('01:00:00')
+train['deltaB10e_s']=(train.timeB10_e-train.timeB10_s)/ pd.Timedelta('01:00:00')
+train['deltaB11s_10e']=(train.timeB11_s-train.timeB10_e)/ pd.Timedelta('01:00:00')
+train['deltaB11e_s']=(train.timeB11_e-train.timeB11_s)/ pd.Timedelta('01:00:00')
+
+
+# In[105]:
+
+
+train=train.drop(['Unnamed: 0','timeA5','delete_timeA7','delete_A8','timeA9','timeA11',
+                         'timeA14','timeA16','timeA24','timeA26','timeB5','timeB7','timeA20_s',
+                         'timeA20_e','timeA28_s','timeA28_e','timeB4_s','timeB4_e','timeB9_s',
+                         'timeB9_e','timeB10_s','timeB10_e','timeB11_s','timeB11_e'],axis=1)
+
+
+# In[106]:
+
+
+train.columns
+
+
+# In[107]:
+
+
+train['deltaA9_5']=np.where(train.deltaA9_5>0,train.deltaA9_5,train.deltaA9_5+24)
+train['deltaA11_9']=np.where(train.deltaA11_9>0,train.deltaA11_9,train.deltaA11_9+24)
+train['deltaA14_11']=np.where(train.deltaA14_11>0,train.deltaA14_11,train.deltaA14_11+24)
+train['deltaA16_14']=np.where(train.deltaA16_14>0,train.deltaA16_14,train.deltaA16_14+24)
+train['deltaA20s_16']=np.where(train.deltaA20s_16>0,train.deltaA20s_16,train.deltaA20s_16+24)
+train['deltaA20e_s']=np.where(train.deltaA20e_s>0,train.deltaA20e_s,train.deltaA20e_s+24)
+train['deltaA24_20e']=np.where(train.deltaA24_20e>0,train.deltaA24_20e,train.deltaA24_20e+24)
+train['deltaA26_24']=np.where(train.deltaA26_24>0,train.deltaA26_24,train.deltaA26_24+24)
+train['deltaA28s_26']=np.where(train.deltaA28s_26>0,train.deltaA28s_26,train.deltaA28s_26+24)
+train['deltaA28e_s']=np.where(train.deltaA28e_s>0,train.deltaA28e_s,train.deltaA28e_s+24)
+train['deltaB4s_28e']=np.where(train.deltaB4s_28e>0,train.deltaB4s_28e,train.deltaB4s_28e+24)
+train['deltaB4e_s']=np.where(train.deltaB4e_s>0,train.deltaB4e_s,train.deltaB4e_s+24)
+train['deltaB5_4e']=np.where(train.deltaB5_4e>0,train.deltaB5_4e,train.deltaB5_4e+24)
+train['deltaB7_5']=np.where(train.deltaB7_5>0,train.deltaB7_5,train.deltaB7_5+24)
+train['deltaB9s_7']=np.where(train.deltaB9s_7>0,train.deltaB9s_7,train.deltaB9s_7+24)
+train['deltaB9e_s']=np.where(train.deltaB9e_s>0,train.deltaB9e_s,train.deltaB9e_s+24)
+train['deltaB10s_9e']=np.where(train.deltaB10s_9e>0,train.deltaB10s_9e,train.deltaB10s_9e+24)
+train['deltaB10e_s']=np.where(train.deltaB10e_s>0,train.deltaB10e_s,train.deltaB10e_s+24)
+train['deltaB11s_10e']=np.where(train.deltaB11s_10e>0,train.deltaB11s_10e,train.deltaB11s_10e+24)
+train['deltaB11e_s']=np.where(train.deltaB11e_s>0,train.deltaB11e_s,train.deltaB11e_s+24)
+
+
+# In[108]:
+
+
+train['deltaA9_5']=np.where(abs(train.deltaA9_5)>10000,train.deltaA9_5.mode(),train.deltaA9_5)
+train['deltaA11_9']=np.where(abs(train.deltaA11_9)>10000,train.deltaA11_9.mode(),train.deltaA11_9)
+train['deltaA14_11']=np.where(abs(train.deltaA14_11)>10000,train.deltaA14_11.mode(),train.deltaA14_11)
+train['deltaA16_14']=np.where(abs(train.deltaA16_14)>10000,train.deltaA16_14.mode(),train.deltaA16_14)
+train['deltaA20s_16']=np.where(abs(train.deltaA20s_16)>10000,train.deltaA20s_16.mode(),train.deltaA20s_16)
+train['deltaA26_24']=np.where(abs(train.deltaA26_24)>10000,train.deltaA26_24.mode(),train.deltaA26_24)
+train['deltaA28s_26']=np.where(abs(train.deltaA28s_26)>10000,train.deltaA28s_26.mode(),train.deltaA28s_26)
+
+
+# In[109]:
+
+
+train.A2=train.A2.replace(np.NaN,0)
+train.A3=train.A3.replace(np.NaN,0)
+
+
+# In[83]:
+
+
+train.to_csv('E:/tianchi/round1_train1229.csv')
+
+
+# # missing value,i am crying~~
+
+# In[126]:
+
+
+train=pd.read_csv('file:///E:/tianchi/round1_train1229.csv')
+
+
+# In[127]:
+
+
+#train.B2.mode()
+train.A21=train.A21.replace(np.NaN,50)
+train.A23=train.A23.replace(np.NaN,5)
+train.B2=train.B2.replace(np.NaN,3.5)
+train.B3=train.B3.replace(np.NaN,3.5)
+train.B8=train.B8.replace(np.NaN,45)
+train.B13=train.B13.replace(np.NaN,0.15)
+
+
+# In[128]:
+
+
+train.deltaB11e_s=train.deltaB11e_s.replace(np.NaN,1)
+train.deltaB11e_s=train.deltaB11e_s.replace(23,1)
+train.deltaB11e_s=train.deltaB11e_s.replace(24,1)
+
+train.deltaB11s_10e=train.deltaB11s_10e.replace(24,0)
+train.deltaB11s_10e=train.deltaB11s_10e.replace(np.NaN,0)
+
+train.deltaB10e_s=train.deltaB10e_s.replace(24,0)
+train.deltaB10e_s=train.deltaB10e_s.replace(np.NaN,1.5)
+
+
+# In[142]:
+
+
+train.deltaB5_4e=train.deltaB5_4e.replace(24,0)
+train.deltaB5_4e=train.deltaB5_4e.replace(np.NaN,0)
+
+train.deltaB10s_9e=train.deltaB10s_9e.replace(24,0)
+train.deltaB10s_9e=train.deltaB10s_9e.replace(np.NaN,0)
+
+train.deltaB7_5=train.deltaB7_5.replace(24,0)
+train.deltaB7_5=train.deltaB7_5.replace(np.NaN,2)
+
+train.deltaA24_20e=train.deltaA24_20e.replace(24,0)
+train.deltaA24_20e=train.deltaA24_20e.replace(np.NaN,0)
+
+train.deltaA26_24=train.deltaA26_24.replace(24,0)
+train.deltaA26_24=train.deltaA26_24.replace(np.NaN,1)
+
+train.deltaA28s_26=train.deltaA28s_26.replace(24,0)
+train.deltaA28s_26=train.deltaA28s_26.replace(np.NaN,0)
+
+
+# In[143]:
+
+
+train.to_csv('E:/tianchi/round1_train1229_1.csv')#B1,B12
+
+
+# In[3]:
+
+
+train=pd.read_csv('file:///E:/tianchi/round1_train1229_1.csv')
+
+
+# In[6]:
+
+
+#B1和B12的null 用mode填充，后期看效果再更改
+train.B1=train.B1.replace(np.NaN,320)
+train.B12=train.B12.replace(np.NaN,1200)
+
+
+# In[26]:
+
+
+traintry.to_csv('E:/tianchi/round1_train0102.csv')#B1,B12
+
+
+# # try 
+# #只有一个类别，每种结果都是相似度的打分
+
+# In[8]:
+
+
+train.columns
+
+
+# In[9]:
+
+
+train.columns=['asd', 'asd1', 'ID', 'A1', 'A2', 'A3', 'A4', 'A6', 'A10',
+       'A12', 'A13', 'A15', 'A17', 'A18', 'A19', 'A21', 'A22', 'A23', 'A25',
+       'A27', 'B1', 'B2', 'B3', 'B6', 'B8', 'B12', 'B13', 'B14', 'ACPT_RATE',
+       'deltaA9_5', 'deltaA11_9', 'deltaA14_11', 'deltaA16_14', 'deltaA20s_16',
+       'deltaA20e_s', 'deltaA24_20e', 'deltaA26_24', 'deltaA28s_26',
+       'deltaA28e_s', 'deltaB4s_28e', 'deltaB4e_s', 'deltaB5_4e', 'deltaB7_5',
+       'deltaB9s_7', 'deltaB9e_s', 'deltaB10s_9e', 'deltaB10e_s',
+       'deltaB11s_10e', 'deltaB11e_s']
+train=train.drop(columns=['asd', 'asd1'])
+train.columns
+
+
+# In[18]:
+
+
+traintry=train[['ID', 'A1', 'A2', 'A3', 'A4', 'A6', 'A10', 'A12', 'A13', 'A15', 'A17',
+       'A18', 'A19', 'A21', 'A22', 'A23', 'A25', 'A27', 'B1', 'B2', 'B3', 'B6',
+       'B8', 'B12', 'B13', 'B14', 'deltaA9_5', 'deltaA11_9',
+       'deltaA14_11', 'deltaA16_14', 'deltaA20s_16', 'deltaA20e_s',
+       'deltaA24_20e', 'deltaA26_24', 'deltaA28s_26', 'deltaA28e_s',
+       'deltaB4s_28e', 'deltaB4e_s', 'deltaB5_4e', 'deltaB7_5', 'deltaB9s_7',
+       'deltaB9e_s', 'deltaB10s_9e', 'deltaB10e_s', 'deltaB11s_10e',
+       'deltaB11e_s', 'ACPT_RATE']]
+traintry
+
+
+# In[25]:
+
+
+traintry.deltaB9s_7=train.deltaB9s_7.replace(24,0)
+traintry.deltaB4s_28e=train.deltaB4s_28e.replace(24,0)
+traintry.deltaA11_9=train.deltaA11_9.replace(24,0)
+traintry.deltaA20s_16=train.deltaA20s_16.replace(24,0)
+traintry.deltaA20e_s=train.deltaA20e_s.replace(24,1)
+traintry.A25=train.A25.replace(traintry.A25[1245],80)
+
+
+# In[47]:
+
+
+traintry=traintry.drop(columns=['ID'])
+
+
+# In[104]:
+
+
+#CNN,LSTM,all 45 features
+from sklearn.cross_validation import train_test_split
+import numpy as np
+
+X=traintry[['A1', 'A2', 'A3', 'A4', 'A6', 'A10', 'A12', 'A13', 'A15', 'A17',
+       'A18', 'A19', 'A21', 'A22', 'A23', 'A25', 'A27', 'B1', 'B2', 'B3', 'B6',
+       'B8', 'B12', 'B13', 'B14', 'deltaA9_5', 'deltaA11_9',
+       'deltaA14_11', 'deltaA16_14', 'deltaA20s_16', 'deltaA20e_s',
+       'deltaA24_20e', 'deltaA26_24', 'deltaA28s_26', 'deltaA28e_s',
+       'deltaB4s_28e', 'deltaB4e_s', 'deltaB5_4e', 'deltaB7_5', 'deltaB9s_7',
+       'deltaB9e_s', 'deltaB10s_9e', 'deltaB10e_s', 'deltaB11s_10e',
+       'deltaB11e_s']]
+Y=(traintry.ACPT_RATE*100000).astype(int)
+
+X_train,X_test,Y_train,Y_test=train_test_split(X,Y,random_state=33,test_size=0.25)
+
+
+# In[105]:
+
+
+Y_test
+
+
+# In[176]:
+
+
+#dt
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import cross_val_score
+
+# dtc = DecisionTreeClassifier(max_depth=None,min_samples_split=2,random_state=0)
+# dtc.fit(X_train,Y_train)
+# Y_predict1 = dtc.predict(X_test)
+# print(dtc.score(X_test,Y_test))
+# #scores=cross_val_score(dtc,X,Y)
+# #scores.mean()
+# abs((Y_predict1-Y_test)/100000).mean()
+
+
+# In[190]:
+
+
+# #svm
+# svc=SVC(gamma=1/45, C=2)
+# svc.fit(X_train,Y_train)
+# Y_predict2 = svc.predict(X_test)
+# print(svc.score(X_test,Y_test))
+# abs((Y_predict2-Y_test)/100000).mean()
+
+
+# In[276]:
+
+
+#rf-还是有优势的<0.01即可
+rfc=RandomForestClassifier(max_depth=None, n_estimators=20, max_features='auto')
+rfc.fit(X_train,Y_train)
+Y_predict3 = rfc.predict(X_test)
+print(rfc.score(X_test,Y_test))
+print(cross_val_score(rfc, X_train, Y_train, cv=5,scoring='accuracy'))#也就是被分类器检测到的数据中 分类正确的部分
+abs((Y_predict3-Y_test)/100000).describe()
+
+
+# In[286]:
+
+
+from matplotlib.pylab import rcParams
+rcParams['figure.figsize']=12,5
+
+plt.plot(Y_predict3/100000,label='predict')
+plt.plot(Y_test.reset_index(drop=True)/100000,label='test')
+plt.legend()
+
+
+# In[ ]:
+
+
+#network neural
+
